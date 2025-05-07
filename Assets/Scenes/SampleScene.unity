@@ -2248,6 +2248,7 @@ MonoBehaviour:
   currentMagAmmo: 7
   maxMagAmmo: 7
   totalAmmo: 49
+  gunDamage: 20
   cameraTransform: {fileID: 963194228}
 --- !u!195 &1844323556 stripped
 NavMeshAgent:

@@ -23,7 +23,7 @@ public class playerMovement : MonoBehaviour
     Vector2 userInputVelocity = Vector2.zero;
     public PlayerInputClass playerActions;
     private InputAction movementInput;
-   
+
 
     //ground check stuff
     public Transform groundCheck;
@@ -43,14 +43,14 @@ public class playerMovement : MonoBehaviour
     //instantiates the playerinputclass for use with movementINput and jumpINput
     private void Awake()
     {
-        playerActions = new PlayerInputClass(); 
+        playerActions = new PlayerInputClass();
     }
-    
+
 
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
     //boilerplate for the input system
     private void OnEnable()
@@ -60,12 +60,11 @@ public class playerMovement : MonoBehaviour
         //handles spinning up the jump system by enabling it and making the event system listen for it
         jumpInput = playerActions.Player.Jump;
         jumpInput.Enable();
-        //pickupInput = playerActions.Player.Pickup;
-        //pickupInput.Enable();
+
 
         //adds the jump function as something that happens when jumpInput happens
         jumpInput.performed += Jump;
-        //pickupInput.performed += Pickup;
+
     }
     //disables the movement and jumpinput for when the player dies or something
     private void OnDisable()
@@ -76,11 +75,11 @@ public class playerMovement : MonoBehaviour
 
     // Update is called once per frame
     void Update()
-    {   
+    {
         //cast a thick ray from the center of player controller and see if it hits the ground
         isGrounded = Physics.SphereCast(transform.position, playerSize, transform.TransformDirection(Vector3.down), out hit, rayLength, groundMask);
         //keeps you glued to the ground if you're on the ground and you're moving dowarnds
-        if (isGrounded && resultantVelocity.y < 0) 
+        if (isGrounded && resultantVelocity.y < 0)
         {
             resultantVelocity.y = -2f;
         }
@@ -108,9 +107,4 @@ public class playerMovement : MonoBehaviour
     {
         jumpCheck = 1;
     }
-    /*private void Pickup(InputAction.CallbackContext context)
-    {
-
-
-    }*/
 }

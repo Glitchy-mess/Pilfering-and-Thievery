@@ -33,19 +33,21 @@ public class shootingScript : MonoBehaviour
     private RaycastHit guardHitProperties;
     private LayerMask interferenceMask;
     private void Awake()
-    {
+    { 
         playerInput = new PlayerInputClass();
     }
 
     // Start is called before the first frame update
     void Start()
     {
+        //finding the masks for the possible targets that the gun hits
         guardMask = LayerMask.GetMask("Guard");
         interferenceMask = LayerMask.GetMask("Ground", "Pickup");
     }
 
     private void OnEnable()
     {
+        //boilerplate for getting the player input system running
         fireInput = playerInput.Player.Fire;
         fireInput.Enable();
 
@@ -59,7 +61,9 @@ public class shootingScript : MonoBehaviour
 
     private void OnDisable()
     {
+        //disabling the inputs once the program ends
         fireInput.Disable();
+        reloadInput.Disable();
     }
 
     // Update is called once per frame
@@ -81,46 +85,41 @@ public class shootingScript : MonoBehaviour
             //reloads the gun without using the reload function because callback context can't be removed from the function without removing the ability to use it as an input
             //either sets the mag to its max amt, or if total ammo is lower then its mag
             currentMagAmmo = Mathf.Min(maxMagAmmo, totalAmmo);
-            //currentMagAmmo = maxMagAmmo;
+
             //stops total ammo from going into negatives
             totalAmmo = Mathf.Max(0, (totalAmmo - maxMagAmmo));
-            
-            //totalAmmo -= maxMagAmmo;
-            Debug.Log("BingBong2: " + totalAmmo);
+
         }
         else
         {
-            bool interferenceCheck = Physics.Raycast(cameraTransform.position, transform.TransformDirection(Vector3.forward), Mathf.Infinity, interferenceMask, QueryTriggerInteraction.Ignore);
             //general check to see if the player hit the ground or other objects that can be thrown into the layer mask. this prevents the ray hitting the guard through the ground
+            bool interferenceCheck = Physics.Raycast(cameraTransform.position, transform.TransformDirection(Vector3.forward), Mathf.Infinity, interferenceMask, QueryTriggerInteraction.Ignore);
             if (!interferenceCheck)
             {
                 bool guardHit = Physics.Raycast(cameraTransform.position, transform.TransformDirection(Vector3.forward), out guardHitProperties,Mathf.Infinity, guardMask, QueryTriggerInteraction.Ignore);
                 if (guardHit)
                 {
-                    Debug.Log("Guard has been hit!");
+                    //finds the game object that the player hit with the bullet
                     guardObj = guardHitProperties.collider.gameObject;
+                    //if the guard isn't dead, then reduce their health
                     if (guardObj.tag == "Guard")
                     {
                         enemyScript = guardObj.GetComponent<EnemyScript>();
-                        enemyScript.currentHealth -= 
+                        enemyScript.currentHealth -= gunDamage;
                     }
                 }
             }
-            else
-            {
-                Debug.Log("Invalid shot!");
-            }
+            //decriment the ammo
             currentMagAmmo--;
-            Debug.Log("bingbong: " + currentMagAmmo);
         }
     }
-
+    //function for reloading when the player presses R
     private void Reload(InputAction.CallbackContext context)
     {
+        //cache the ammo, set the mag to either be the max value or the total ammo count (whichever is lower) and then subtract out what was taken from the total count
         int tempCurrentMagInfo = currentMagAmmo;
         currentMagAmmo = Mathf.Min(maxMagAmmo, totalAmmo);
         totalAmmo = Mathf.Max(0, (totalAmmo - (maxMagAmmo - tempCurrentMagInfo)));
-        Debug.Log("bing bong 3: " + totalAmmo);
     }
 
 }

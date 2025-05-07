@@ -40,8 +40,7 @@ public class MouseLook : MonoBehaviour
     private GameObject bagGameObj;
     [SerializeField]
     private float bagDropDist;
-    //holds a temp instance of the bag being held
-    private GameObject tempGameObj;
+
     // Start is called before the first frame update
     private void Awake()
     {
@@ -54,10 +53,12 @@ public class MouseLook : MonoBehaviour
     }
     private void OnEnable()
     {
+        //boilerplate for the input system
         pickupInput = playerActions.Player.Pickup;
         pickupInput.Enable();
         dropInput = playerActions.Player.Drop;
         dropInput.Enable();
+
         pickupInput.performed += Pickup;
         dropInput.performed += Drop;
     }
@@ -78,32 +79,34 @@ public class MouseLook : MonoBehaviour
     }
     private void OnDisable()
     {
+        //tears things down when the program ends
         pickupInput.Disable();
+        dropInput.Disable();
     }
 
     private void Pickup(InputAction.CallbackContext context)
     {
-        Debug.Log("Input recieved!\n");
+        //checks to see if the player was looking at a bag when they were picking it up
         pickupCheck = Physics.SphereCast(transform.position, pickupRadius, transform.TransformDirection(Vector3.forward), out hit, rayLength, pickupMask);
         if (pickupCheck == true && holdingBag != true)
         {
             //use this function to visualize the ray trace
             //DrawLine(transform.position, pickupRadius, transform.TransformDirection(Vector3.forward), rayLength);
+            //gets the bag game object, 
             bagGameObj = hit.collider.gameObject;
-            tempGameObj = bagGameObj;
+            //destroys the parent and the actual object because the prefab generates two objects, mem leak if the parent isn't destroyed
             Destroy(bagGameObj.transform.parent.gameObject);
             Destroy(bagGameObj);
             holdingBag = true;
-            Debug.Log("Picked up!");
         }
     }
     private void Drop(InputAction.CallbackContext context)
     {
+        //if the player is holding a bag, then drop it
         if (holdingBag == true)
         {
-            //instantiates an object that 
+            //instantiates an object that takes a cue from the prefab, and then puts it slightly in front of the player
             Instantiate(bagPrefab, transform.position + (bagDropDist * transform.TransformDirection(Vector3.forward)), Quaternion.identity);
-            //PrefabUtility.InstantiatePrefab(bagPrefab);
             holdingBag = false;
         }
     }
