@@ -15,6 +15,7 @@ public class MouseLook : MonoBehaviour
     public float mouseSensitivity = 100f;
     public Transform playerBody;
     float xRotation = 0f;
+
     //input system stuff
     public PlayerInputClass playerActions;
     private InputAction pickupInput;
@@ -32,14 +33,21 @@ public class MouseLook : MonoBehaviour
     private LineRenderer lineObjRenderer;
     private Transform lineTransform;
 
-    //vars for picking up the bag itself
+    //vars for picking up the bag/items itself
+    //bag related
     bool holdingBag = false;
-    //of note for this, you wanna drag and drop the prefab asset from the folder, not from the hierarchy because that causes the thing to shit its pants!!!
-    //specifically you'll have one "patient zero" that just throws an error
-    public GameObject bagPrefab;
-    private GameObject bagGameObj;
     [SerializeField]
     private float bagDropDist;
+    //crowbar related
+    bool crowbarCheck = false;
+    //of note for this, you wanna drag and drop the prefab asset from the folder, not from the hierarchy because that causes the thing to shit its pants!!!
+    //specifically you'll have one "patient zero" that just throws an error
+    //generic tags and prefabs and stuff
+    string objectTag;
+    public GameObject pickupPrefab;
+    private GameObject generalGameObject;
+    [SerializeField]
+    public GameObject crowbarAsset;
 
     // Start is called before the first frame update
     private void Awake()
@@ -88,16 +96,30 @@ public class MouseLook : MonoBehaviour
     {
         //checks to see if the player was looking at a bag when they were picking it up
         pickupCheck = Physics.SphereCast(transform.position, pickupRadius, transform.TransformDirection(Vector3.forward), out hit, rayLength, pickupMask);
-        if (pickupCheck == true && holdingBag != true)
+        if (pickupCheck == true)
         {
+            objectTag = hit.collider.gameObject.tag;
             //use this function to visualize the ray trace
             //DrawLine(transform.position, pickupRadius, transform.TransformDirection(Vector3.forward), rayLength);
-            //gets the bag game object, 
-            bagGameObj = hit.collider.gameObject;
-            //destroys the parent and the actual object because the prefab generates two objects, mem leak if the parent isn't destroyed
-            Destroy(bagGameObj.transform.parent.gameObject);
-            Destroy(bagGameObj);
-            holdingBag = true;
+            //gets the bag game object through the usage of  the colllidor
+            generalGameObject = hit.collider.gameObject;
+
+
+
+            if (!holdingBag && objectTag == "Bag")
+            {
+                //destroys the parent and the actual object because the prefab generates two objects, mem leak if the parent isn't destroyed
+                Destroy(generalGameObject.transform.parent.gameObject);
+                Destroy(generalGameObject);
+                holdingBag = true;
+            }
+            if (!crowbarCheck && objectTag == "Crowbar")
+            {
+                Destroy(generalGameObject);
+                crowbarCheck = true;
+                crowbarAsset.SetActive(true);
+                
+            }
         }
     }
     private void Drop(InputAction.CallbackContext context)
@@ -106,7 +128,7 @@ public class MouseLook : MonoBehaviour
         if (holdingBag == true)
         {
             //instantiates an object that takes a cue from the prefab, and then puts it slightly in front of the player
-            Instantiate(bagPrefab, transform.position + (bagDropDist * transform.TransformDirection(Vector3.forward)), Quaternion.identity);
+            Instantiate(pickupPrefab, transform.position + (bagDropDist * transform.TransformDirection(Vector3.forward)), Quaternion.identity);
             holdingBag = false;
         }
     }

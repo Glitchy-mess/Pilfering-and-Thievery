@@ -1,12 +1,16 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UIElements;
 
 public class EnemyScript : MonoBehaviour
 {
+    public Transform[] points; //array of all the locations the guard can walk to 
+    private int currentPosition = 0; //position in array of points we are at
     //variables for handling enemy navmesh
     public NavMeshAgent agent;
     public Transform player;
@@ -18,9 +22,33 @@ public class EnemyScript : MonoBehaviour
     //variables for enemy health
     [SerializeField]
     private int maxHealth = 100;
+    public int alertState = 1;
+
+    public float playerHeight = 0.35f;//vertical offset for detection
+    public float guardHeight = 0.35f;
+
+    private Vector3 playerVector; //Vector from guard to player
+    private Vector3 guardPosition;
+
+    private float playerLength; //length of this vector
+    public float detectionAngle = 0.35f;//cos of the angle of detection - closer to 1 is smaller
+    private float directionLength;
+
+    public float currentDetection = 0;
+    // these 
+    public float detectionGainSpeed = 1;
+    public float detectionLossSpeed = 1;
+
+    public float maxDetection = 10;
+    public float detectionRadius = 25f;
+    public float waitTime = 5f; //how long the guard waits at each point before going to the next one
+    private float currentWait = 0;
+
+    private RaycastHit hit;
     public int currentHealth;
     [SerializeField]
     private bool bodyBaggable = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -28,6 +56,7 @@ public class EnemyScript : MonoBehaviour
         //player = GameObject.Find("Player").transform;
         agent = GetComponent<NavMeshAgent>();
         currentHealth = maxHealth;
+        goToNextPoint();
     }
 
     // Update is called once per frame
@@ -38,41 +67,89 @@ public class EnemyScript : MonoBehaviour
             Die();
         }
         if (!bodyBaggable)
-        {
-            Patrol();
+        { 
+            //check what alert state the guard is in and decide what to do
+            if (alertState == 1) //stealth - patrolling and looking for player
+            {
+                
+    
+                if (checkPlayerVisible())//increase detection if looking at player
+                {
+                    currentDetection += detectionGainSpeed * Time.deltaTime;
+                }
+                else //decrease detection
+                {
+                    currentDetection -= detectionLossSpeed * Time.deltaTime;
+                    if (currentDetection < 0)
+                    {
+                        currentDetection = 0;
+                    }
+                }
+    
+                //walk to next point or stay at current point
+                if (atDestination())//if we are at the end
+                {
+                    currentWait += Time.deltaTime;
+                    if(currentWait > waitTime)//if we have waiting long enough
+                    {
+                        goToNextPoint();
+                    }
+                }
+    
+            }
+            else if(alertState == 2) //player has been found but mission is not loud
+            {
+    
+            }
+            else if(alertState == 3)//player has gone loud - chase and shoot
+            {
+    
+            }
         }
-        
     }
-    void WalkTo()
+    bool checkPlayerVisible()
     {
+        //determine if player is in sight or not
+        guardPosition = this.transform.position;
+        guardPosition.y += guardHeight;
 
-    }
-    void Patrol() //while player is not spotted
-    {
-        if (!validPoint)
-        {
-            getNewWalkPoint();
-        }
-        if (validPoint)
-        {
-            agent.SetDestination(walkPoint);
-        }
+        playerVector = player.position - this.transform.position; //get vector from guard to player
+        playerVector.y += playerHeight;
 
-        Vector3 distanceToPoint = walkPoint - transform.position;
-        if(distanceToPoint.magnitude < 1f)//if we have arrived
-        {
-            validPoint = false;
+        playerLength = Mathf.Sqrt(playerVector.x * playerVector.x + playerVector.y * playerVector.y + playerVector.z * playerVector.z);//get distance to player
+
+        //check if player is in detection radius
+        if (playerLength < detectionRadius)
+        {//check if player is in detection angle
+         //use dot product of 2 vectors: player vector and direction vector
+         //direction vector is always a unit vector and has magnitude of 1
+            float dotProduct = playerVector.x * this.transform.forward.x + playerVector.y * this.transform.forward.y + playerVector.z * this.transform.forward.z;
+
+            //rearrange the formula so we don't have to divide
+            if (playerLength * detectionAngle < dotProduct) //if the player is in angle of detection
+            {//make sure player isn't behind a wall
+                if (Physics.Raycast(guardPosition, playerVector, out hit, playerLength))//if the raycast hit anything
+                {
+                    return GameObject.ReferenceEquals(player.gameObject, hit.transform.gameObject);//make sure it hit the player
+                }
+            }
         }
+        return false; ;
     }
-    void getNewWalkPoint()
+
+    bool atDestination()
     {
-        //generate two random Z and X coordinates to walk to within the walking range
-        float randomZ = UnityEngine.Random.Range(-walkPointRange, walkPointRange);
-        float randomX = UnityEngine.Random.Range(-walkPointRange, walkPointRange);
-        
-        //creating the new point to walk towards and checking to see if the guard can walk towards it
-        walkPoint = new Vector3(transform.position.x + randomX, transform.position.y, transform.position.z + randomZ);
-        validPoint = Physics.Raycast(walkPoint, -transform.up, 2f, groundMask);
+        if (!agent.pathPending)//if not making a path
+        {
+            if (agent.remainingDistance <= agent.stoppingDistance) //if near the end
+            {
+                if (!agent.hasPath || agent.velocity.sqrMagnitude == 0f) //if at end of path or stopped
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     void Die()
@@ -81,4 +158,20 @@ public class EnemyScript : MonoBehaviour
         bodyBaggable = true;
     }
 
+    void goToNextPoint()
+    {
+        //make sure there are points
+        if (points.Length == 0)
+        {
+            return;
+        }
+
+        //travel to the point we're at
+        agent.destination = points[currentPosition].position;
+
+        //get the next point in line 
+        currentPosition = (currentPosition + 1) % points.Length;
+        //reset wait time
+        currentWait = 0;
+    }
 }

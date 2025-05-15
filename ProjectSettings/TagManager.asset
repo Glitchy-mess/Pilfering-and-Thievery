@@ -6,10 +6,11 @@ TagManager:
   tags:
   - Obstacles
   - Guard
-  - Pickup
   - UI
   - Gun
   - DeadGuard
+  - Crowbar
+  - Bag
   layers:
   - Default
   - TransparentFX
