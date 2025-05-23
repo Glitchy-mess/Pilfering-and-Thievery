@@ -11,6 +11,7 @@ TagManager:
   - DeadGuard
   - Crowbar
   - Bag
+  - Camera
   layers:
   - Default
   - TransparentFX
