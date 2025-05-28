@@ -180,33 +180,40 @@ public class EnemyScript : MonoBehaviour
             }
         }
     }
-    bool checkPlayerVisible()
+    bool checkPlayerVisible() //return true if player is seen, false if not
     {
         //determine if player is in sight or not
-        guardPosition = this.transform.position;
+        //"move" the camera forward so that the player can hide behind the camera
+        guardPosition = transform.position;
         guardPosition.y += guardHeight;
 
-        playerVector = player.position - this.transform.position; //get vector from guard to player
+        playerVector = player.position - guardPosition; //get vector from camera to player
         playerVector.y += playerHeight;
 
-        playerLength = Mathf.Sqrt(playerVector.x * playerVector.x + playerVector.y * playerVector.y + playerVector.z * playerVector.z);//get distance to player
+        playerLength = playerVector.magnitude;
 
         //check if player is in detection radius
-        if (playerLength < detectionRadius)
+        if (playerLength > detectionRadius)
         {//check if player is in detection angle
          //use dot product of 2 vectors: player vector and direction vector
          //direction vector is always a unit vector and has magnitude of 1
-            dotProduct = playerVector.x * this.transform.forward.x + playerVector.y * this.transform.forward.y + playerVector.z * this.transform.forward.z;
-
-            //rearrange the formula so we don't have to divide
-            if (playerLength * detectionAngle < dotProduct) //if the player is in angle of detection
-            {//make sure player isn't behind a wall
-                if (Physics.Raycast(guardPosition, playerVector, out hit, playerLength))//if the raycast hit anything
-                {
-                    return GameObject.ReferenceEquals(player.gameObject, hit.transform.gameObject);//make sure it hit the player
-                }
-            }
+            return false;
         }
+
+        dotProduct = playerVector.x * this.transform.forward.x + playerVector.y * this.transform.forward.y + playerVector.z * this.transform.forward.z;
+        //rearrange the formula so we don't have to divide
+        if (playerLength * detectionAngle > dotProduct) //if the player out of angle of detection
+        {
+            return false;
+        }
+        //make sure player isn't behind a wall
+        if (Physics.Raycast(guardPosition, playerVector, out hit, playerLength))//if the raycast hit anything
+        {
+            //Debug.DrawRay(guardPosition, playerVector, Color.red);
+            return GameObject.ReferenceEquals(player.gameObject, hit.transform.gameObject);//make sure it hit the player
+        }
+
+
         return false;
     }
 
@@ -214,32 +221,36 @@ public class EnemyScript : MonoBehaviour
     {
         //check anything with tag "bag"
         allOfType = GameObject.FindGameObjectsWithTag("Bag");
+
         guardPosition = transform.position;
         guardPosition.y += guardHeight;
-        foreach (GameObject bag in allOfType)
+
+        foreach (GameObject bag in allOfType)//check if can see a bag
         {
-            //yes this is a bunch of if statements
             playerVector = bag.transform.position - guardPosition; //get vector from guard to bag - reusing player Vector
             playerLength = playerVector.magnitude;
-            if(playerLength < detectionRadius)//check if bag in radius
+            if (playerLength > detectionRadius)
             {
-                //get dot product
-                dotProduct = playerVector.x * transform.forward.x + playerVector.y * transform.forward.y + playerVector.z * transform.forward.z;
-                if(playerLength * detectionAngle < dotProduct)//check if bag could be seen view range
-                {
-                    Debug.Log("firing ray");
-                    if (Physics.Raycast(guardPosition, playerVector, out hit, playerLength))
-                    {//check if the guard can actually see it
-                        Debug.Log("something hit");
-                        if( GameObject.ReferenceEquals(bag.gameObject, hit.transform.gameObject))//make sure the guard saw the bag
-                        {
-                            return true;
-                        }
-                    }
-                }
+                break;
             }
 
+            //check dot product
+            dotProduct = playerVector.x * transform.forward.x + playerVector.y * transform.forward.y + playerVector.z * transform.forward.z;
+            if (playerLength * detectionAngle > dotProduct)
+            {
+                break;
+            }
+
+            if (Physics.Raycast(guardPosition, playerVector, out hit, playerLength))
+            {//check if the guard can actually see it
+                Debug.DrawRay(guardPosition, playerVector, Color.red);
+                if (GameObject.ReferenceEquals(bag.gameObject, hit.transform.gameObject))//make sure the guard saw the bag
+                {
+                    return true;
+                }
+            }
         }
+
         return false;
     }
 

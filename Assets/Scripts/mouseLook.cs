@@ -109,7 +109,8 @@ public class MouseLook : MonoBehaviour
             if (!holdingBag && objectTag == "Bag")
             {
                 //destroys the parent and the actual object because the prefab generates two objects, mem leak if the parent isn't destroyed
-                Destroy(generalGameObject.transform.parent.gameObject);
+                //don't destroy the parent i got rid of the parent
+                //Destroy(generalGameObject.transform.parent.gameObject);
                 Destroy(generalGameObject);
                 holdingBag = true;
             }
@@ -119,6 +120,10 @@ public class MouseLook : MonoBehaviour
                 crowbarCheck = true;
                 crowbarAsset.SetActive(true);
                 
+            }
+            if(objectTag == "Exit")
+            {
+                generalGameObject.GetComponent<LootDropPointScript>().exitMission();
             }
         }
     }

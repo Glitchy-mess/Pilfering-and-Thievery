@@ -12,6 +12,7 @@ TagManager:
   - Crowbar
   - Bag
   - Camera
+  - Exit
   layers:
   - Default
   - TransparentFX
