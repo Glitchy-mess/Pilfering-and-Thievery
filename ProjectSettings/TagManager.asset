@@ -11,6 +11,9 @@ TagManager:
   - DeadGuard
   - Crowbar
   - Bag
+  - Distraction
+  - Camera
+  - Exit
   layers:
   - Default
   - TransparentFX
@@ -18,7 +21,7 @@ TagManager:
   - 
   - Water
   - UI
-  - Pickup
+  - Interactable
   - Guard
   - Player
   - 

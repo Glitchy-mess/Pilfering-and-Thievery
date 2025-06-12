@@ -67,6 +67,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Weapon Swap",
+                    "type": "Value",
+                    "id": "de4d23c8-b786-4a49-8a6a-f390e5436c4e",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -294,7 +303,7 @@
                     "name": "",
                     "id": "f3025118-e982-4323-8c78-cf36e2b74830",
                     "path": "<Keyboard>/e",
-                    "interactions": "",
+                    "interactions": "Hold,Tap",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Pickup",
@@ -331,6 +340,39 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Reload",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "e9d28875-306a-47a4-906b-462521e5e432",
+                    "path": "<Keyboard>/1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Weapon Swap",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9843b83c-ff21-4be6-a5fa-96793edc101c",
+                    "path": "<Keyboard>/2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Weapon Swap",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "95327dfe-8180-4381-b256-49cc771fed26",
+                    "path": "<Keyboard>/3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Weapon Swap",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

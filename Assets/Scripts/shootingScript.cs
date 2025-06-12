@@ -42,7 +42,7 @@ public class shootingScript : MonoBehaviour
     {
         //finding the masks for the possible targets that the gun hits
         guardMask = LayerMask.GetMask("Guard");
-        interferenceMask = LayerMask.GetMask("Ground", "Pickup");
+        interferenceMask = LayerMask.GetMask("Ground", "Interactable");
     }
 
     private void OnEnable()

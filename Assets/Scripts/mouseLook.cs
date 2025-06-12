@@ -8,6 +8,7 @@ using UnityEngine.ProBuilder.Shapes;
 using UnityEngine.UIElements;
 using Unity.VisualScripting;
 using UnityEditor;
+using TMPro;
 
 public class MouseLook : MonoBehaviour
 {
@@ -20,9 +21,12 @@ public class MouseLook : MonoBehaviour
     public PlayerInputClass playerActions;
     private InputAction pickupInput;
     private InputAction dropInput;
+    private double pickupDurationStart;
+    private double totalPickupDuration;
+    private bool pickupButtonPressedDown;
 
     //raycast variables
-    bool pickupCheck;
+    private bool interactableCheck;
     public LayerMask pickupMask;
     public float rayLength = 1f;
     public float pickupRadius = 59f;
@@ -34,6 +38,13 @@ public class MouseLook : MonoBehaviour
     private Transform lineTransform;
 
     //vars for picking up the bag/items itself
+    //variables for handling interactable text
+    public GameObject interactionTextObject;
+    private TextMeshProUGUI interactionTextGUI;
+    private string interactableTag;
+    private bool resetCheck;
+    public GameObject interactionTextBackgroundObject;
+
     //bag related
     bool holdingBag = false;
     [SerializeField]
@@ -58,14 +69,19 @@ public class MouseLook : MonoBehaviour
     {
         //locks the cursor to the middle of the screen if the game is focused
         UnityEngine.Cursor.lockState = CursorLockMode.Locked;
+        interactionTextGUI = interactionTextObject.GetComponent<TextMeshProUGUI>();
+        resetCheck = true;
     }
     private void OnEnable()
     {
         //boilerplate for the input system
         pickupInput = playerActions.Player.Pickup;
         pickupInput.Enable();
+
         dropInput = playerActions.Player.Drop;
         dropInput.Enable();
+
+        pickupInput.started += PickupTimerStartup;
 
         pickupInput.performed += Pickup;
         dropInput.performed += Drop;
@@ -84,10 +100,49 @@ public class MouseLook : MonoBehaviour
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
         playerBody.Rotate(Vector3.up * mouseX);
         transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        //clause to continuously add the time since the pickup input was held down
+        /*if (pickupButtonPressedDown)
+        {
+            //finds the amt of time that has elapsed since the player held down the pickup
+            totalPickupDuration = Time.time - pickupDurationStart;
+            //disables the time tracking if the player held down the button for too long
+            if (totalPickupDuration > 5f)
+            {
+                pickupButtonPressedDown = false;
+            }
+        }*/
+        interactableCheck = Physics.SphereCast(transform.position, pickupRadius, transform.TransformDirection(Vector3.forward), out hit, rayLength, pickupMask);
+
+
+        if (interactableCheck)
+        {
+            //sets the text boxes to be visible
+            interactionTextObject.SetActive(true);
+            interactionTextBackgroundObject.SetActive(true);
+            //finds the tag of the object being looked at and dispalays the appropriate text
+            interactableTag = hit.collider.gameObject.tag;
+            interactionTextGUI.text = getInteractionText(interactableTag);
+            resetCheck = true;
+        }
+        else
+        {
+            if (resetCheck)
+            {
+                resetCheck = false;
+                //resets the text when the player isn't looking at an object
+                interactionTextGUI.text = "";
+                interactionTextBackgroundObject.SetActive(false);
+                interactionTextObject.SetActive(false);
+            }
+        }
     }
     private void OnDisable()
     {
         //tears things down when the program ends
+        //unsubscribe from the input systems
+        pickupInput.performed -= Pickup;
+        dropInput.performed -= Drop;
+
         pickupInput.Disable();
         dropInput.Disable();
     }
@@ -95,8 +150,7 @@ public class MouseLook : MonoBehaviour
     private void Pickup(InputAction.CallbackContext context)
     {
         //checks to see if the player was looking at a bag when they were picking it up
-        pickupCheck = Physics.SphereCast(transform.position, pickupRadius, transform.TransformDirection(Vector3.forward), out hit, rayLength, pickupMask);
-        if (pickupCheck == true)
+        if (interactableCheck)
         {
             objectTag = hit.collider.gameObject.tag;
             //use this function to visualize the ray trace
@@ -104,23 +158,40 @@ public class MouseLook : MonoBehaviour
             //gets the bag game object through the usage of  the colllidor
             generalGameObject = hit.collider.gameObject;
 
+            Debug.Log("The pickup function is firing!");
+            Debug.Log(totalPickupDuration);
 
-
-            if (!holdingBag && objectTag == "Bag")
+            if (!holdingBag && objectTag == "Bag" && totalPickupDuration > 1f)
             {
                 //destroys the parent and the actual object because the prefab generates two objects, mem leak if the parent isn't destroyed
-                Destroy(generalGameObject.transform.parent.gameObject);
+                //don't destroy the parent i got rid of the parent
+                //Destroy(generalGameObject.transform.parent.gameObject);
                 Destroy(generalGameObject);
                 holdingBag = true;
             }
-            if (!crowbarCheck && objectTag == "Crowbar")
+            if (!crowbarCheck && objectTag == "Crowbar" && totalPickupDuration < 0.5f)
             {
+                //same idea for the crowbar, just sets it to be visible in the world
                 Destroy(generalGameObject);
                 crowbarCheck = true;
                 crowbarAsset.SetActive(true);
-                
+            }
+            if(objectTag == "Exit")
+            {
+                generalGameObject.GetComponent<LootDropPointScript>().exitMission();
             }
         }
+    }
+
+    private void PickupTimerStartup(InputAction.CallbackContext context)
+    {
+        pickupDurationStart = Time.time;
+
+        pickupButtonPressedDown = true;
+        
+        Debug.Log("The pickupTimer function is firing!");
+        //Debug.Log(totalPickupDuration);
+
     }
     private void Drop(InputAction.CallbackContext context)
     {
@@ -130,6 +201,24 @@ public class MouseLook : MonoBehaviour
             //instantiates an object that takes a cue from the prefab, and then puts it slightly in front of the player
             Instantiate(pickupPrefab, transform.position + (bagDropDist * transform.TransformDirection(Vector3.forward)), Quaternion.identity);
             holdingBag = false;
+        }
+    }
+    private string getInteractionText(string tag)
+    {
+        string currentInputKey = "E";
+        string beginningOfTheString = "Press " + currentInputKey;
+        switch (tag)
+        {
+            case "DeadGuard":
+                return beginningOfTheString + " to bag the body";
+            case "Bag":
+                return beginningOfTheString + " to pick up the bag";
+            case "Crowbar":
+                return beginningOfTheString + " to pick up the crowbar";
+            case "Distraction":
+                return beginningOfTheString + " to start an alarm";
+            default:
+                return "Error!";
         }
     }
 
