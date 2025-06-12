@@ -180,6 +180,10 @@ public class MouseLook : MonoBehaviour
             {
                 generalGameObject.GetComponent<LootDropPointScript>().exitMission();
             }
+            if(objectTag == "Exit")
+            {
+                generalGameObject.GetComponent<LootDropPointScript>().exitMission();
+            }
         }
     }
 
